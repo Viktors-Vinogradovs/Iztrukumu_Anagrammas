@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iztrūkumu Anagrammas</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <h1>Iztrūkumu Anagrammas</h1>
+
+    <div id="puzzle-area">
+      <div id="tiles"></div>
+    </div>
+
+    <div id="input-area">
+      <input type="text" id="guess-input" placeholder="Ievadi vārdu..." autocomplete="off" autocorrect="off" spellcheck="false">
+      <button id="submit-btn">Pārbaudīt</button>
+    </div>
+
+    <div id="feedback"></div>
+
+    <div id="controls">
+      <button id="giveup-btn">Padoties</button>
+      <button id="next-btn" class="hidden">Nākamais vārds</button>
+    </div>
+
+    <div id="score-area">
+      Sērija: <span id="streak">0</span>
+    </div>
+  </div>
+
+  <script src="words.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
