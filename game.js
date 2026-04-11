@@ -59,7 +59,6 @@ function validate(rawInput) {
   // that could be the missing one) and accept if any works.
 
   const knownLetters = tiles.filter(t => t !== '?');
-  const knownFreq = letterFreq(knownLetters.join(''));
 
   // Build frequency of guess chars; subtract known letters to find the
   // candidate for '?'
@@ -77,14 +76,44 @@ function validate(rawInput) {
     return { ok: false, msg: 'Burti nesakrīt ar dotajiem.' };
   }
 
-  // Letters match structurally — now check if the word is in the list
-  if (!wordSet.has(guess)) {
-    return { ok: false, msg: `"${guess.toUpperCase()}" nav vārdnīcā.` };
+  // Letters match structurally — check local list first, then API fallback
+  if (wordSet.has(guess)) {
+    return { ok: true, api: false, guess, msg: guess === currentWord
+      ? `Pareizi! Vārds bija "${currentWord.toUpperCase()}".`
+      : `Pareizi! "${guess.toUpperCase()}" arī der. (Domātais vārds: "${currentWord.toUpperCase()}")` };
   }
 
-  return { ok: true, msg: guess === currentWord
+  // Not in local list — signal that the API should be tried
+  return { ok: null, api: true, guess };
+}
+
+// ── Tezaurs.lv API check ─────────────────────────────────────────────────────
+
+async function checkTezaurs(word) {
+  const url = `http://api.tezaurs.lv:8182/analyze/${encodeURIComponent(word)}`;
+  let data;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return { ok: false, msg: `"${word.toUpperCase()}" nav atrasts vārdnīcā.` };
+    data = await response.json();
+  } catch {
+    return { ok: false, msg: 'Nevar pārbaudīt — nav savienojuma.' };
+  }
+
+  // Response is a flat array of morphological analyses
+  const isNoun = data.some(e =>
+    e['Vārdšķira'] === 'Lietvārds' &&
+    e['Locījums']  === 'Nominatīvs' &&
+    (e['Skaitlis'] === 'Vienskaitlis' || e['Skaitlis'] === 'Daudzskaitlis')
+  );
+
+  if (!isNoun) {
+    return { ok: false, msg: `"${word.toUpperCase()}" nav lietvārds nominatīvā.` };
+  }
+
+  return { ok: true, msg: word === currentWord
     ? `Pareizi! Vārds bija "${currentWord.toUpperCase()}".`
-    : `Pareizi! "${guess.toUpperCase()}" arī der.` };
+    : `Pareizi! "${word.toUpperCase()}" arī der (tezaurs.lv). (Domātais vārds: "${currentWord.toUpperCase()}")` };
 }
 
 // ── Rendering ────────────────────────────────────────────────────────────────
@@ -120,19 +149,40 @@ function endRound() {
   document.getElementById('submit-btn').disabled = true;
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (roundOver) return;
-  const input = document.getElementById('guess-input').value;
-  const result = validate(input);
-  if (result.ok) {
+  const raw = document.getElementById('guess-input').value;
+  const result = validate(raw);
+
+  if (result.ok === true) {
     streak++;
     setFeedback(result.msg, 'correct');
+    updateStreak();
     endRound();
+  } else if (result.ok === null && result.api) {
+    // Letters match but word not in local list — check tezaurs.lv
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('guess-input').disabled = true;
+    setFeedback('Pārbauda vārdnīcā…', '');
+    const apiResult = await checkTezaurs(result.guess);
+    document.getElementById('submit-btn').disabled = false;
+    document.getElementById('guess-input').disabled = false;
+    if (apiResult.ok) {
+      streak++;
+      setFeedback(apiResult.msg, 'correct');
+      updateStreak();
+      endRound();
+    } else {
+      streak = 0;
+      setFeedback(apiResult.msg, 'wrong');
+      updateStreak();
+      document.getElementById('guess-input').focus();
+    }
   } else {
     streak = 0;
     setFeedback(result.msg, 'wrong');
+    updateStreak();
   }
-  updateStreak();
 }
 
 function handleGiveUp() {
@@ -145,7 +195,7 @@ function handleGiveUp() {
 
 function newRound() {
   roundOver = false;
-  currentWord = wordArray[Math.floor(Math.random() * wordArray.length)];
+  currentWord = wordArray[Math.floor(Math.random() * wordArray.length)].toLowerCase();
   const letters = [...currentWord];
   missingIndex = Math.floor(Math.random() * 6);
   missingLetter = letters[missingIndex];
