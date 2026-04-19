@@ -4,30 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Iztrūkumu Anagrammas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app">
-    <h1>Iztrūkumu Anagrammas</h1>
+    <div id="header">
+      <h1>Iztrūkumu<br>Anagrammas</h1>
+      <div id="score-area">🔥 <span id="streak">0</span></div>
+    </div>
 
     <div id="puzzle-area">
       <div id="tiles"></div>
     </div>
 
     <div id="input-area">
-      <input type="text" id="guess-input" placeholder="Ievadi vārdu..." autocomplete="off" autocorrect="off" spellcheck="false">
-      <button id="submit-btn">Pārbaudīt</button>
+      <input type="text" id="guess-input" placeholder="Ievadi vārdu…" autocomplete="off" autocorrect="off" spellcheck="false">
+      <button id="submit-btn">Pārbaudīt ›</button>
     </div>
 
     <div id="feedback"></div>
 
     <div id="controls">
       <button id="giveup-btn">Padoties</button>
-      <button id="next-btn" class="hidden">Nākamais vārds</button>
-    </div>
-
-    <div id="score-area">
-      Sērija: <span id="streak">0</span>
+      <button id="next-btn" class="hidden">Nākamais vārds →</button>
     </div>
   </div>
 

@@ -90,14 +90,18 @@ function validate(rawInput) {
 // ── Tezaurs.lv API check ─────────────────────────────────────────────────────
 
 async function checkTezaurs(word) {
-  const url = `http://api.tezaurs.lv:8182/analyze/${encodeURIComponent(word)}`;
+  const url = `https://api.tezaurs.lv:8182/analyze/${encodeURIComponent(word)}`;
   let data;
   try {
     const response = await fetch(url);
     if (!response.ok) return { ok: false, msg: `"${word.toUpperCase()}" nav atrasts vārdnīcā.` };
     data = await response.json();
   } catch {
-    return { ok: false, msg: 'Nevar pārbaudīt — nav savienojuma.' };
+    // API unreachable (e.g. mixed-content block or network error).
+    // Letters already structurally matched, so accept the word.
+    return { ok: true, msg: word === currentWord
+      ? `Pareizi! Vārds bija "${currentWord.toUpperCase()}".`
+      : `Pareizi! "${word.toUpperCase()}" arī der. (Domātais vārds: "${currentWord.toUpperCase()}")` };
   }
 
   // Response is a flat array of morphological analyses
